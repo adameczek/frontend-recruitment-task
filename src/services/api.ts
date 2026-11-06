@@ -134,8 +134,9 @@ export async function validateConfiguration(
 export async function generatePreview(
   config: Configuration,
   product: Product,
+  signal?: AbortSignal,
 ): Promise<PreviewResponse> {
-  await randomDelay(100, 300);
+  await randomDelay(100, 300, signal);
 
   // In a real implementation, this would composite images based on selections
   // For now, just return the base product image with a cache-busting param

@@ -13,6 +13,7 @@ List the ticket numbers you worked on, in the order you addressed them:
 1. CFG-148: Fixed crash when deselecting "Include Packaging" — filtered out undefined add-ons and cleaned up dependent add-ons on option change.
 2. CFG-142: Fixed price stuck at $0.00 — replaced the broken timestamp race-condition guard with an AbortController.
 3. CFG-152: Accessibility - Can’t navigate with keyboard only - added keyboard support as without it a contract could have been breached.
+4. CFG-143: App becomes sluggish after extended use — fixed the resize handler memory leak and made preview generation cancellable.
 
 ### Tickets I Deprioritized
 
@@ -102,6 +103,33 @@ I replaced the timestamp checking with AbortController. So each new fetchPrice c
 
 Race conditions should be fixed by cancelling the previous request instead of ignoring it. This also lowers the load on backend as there will be less requests to process.
 I did not use useDebouncedPriceCalculation to still have cost quickly load without a delay from debounce, and abort controller guarantees latest response to be loaded.
+
+---
+
+#### Issue 3: Memory leak — resize handler never removed (app becomes sluggish over time)
+
+**Ticket(s):** CFG-143
+
+**What was the bug?**
+
+The resize handling effect registered a listener on window but never removed it:
+
+Because of no cleanup function listener leaked on every unmount.
+
+**How did you find it?**
+
+Ticket notes listed two areas, preview image generation or resize handling, and in ProductConfiguration Marcus left out text that it might have a leak. I have confirmed that the useEffect with event listener did not have cleanup.
+
+**How did you fix it?**
+
+1. Added a cleanup to the resize effect so the listener is removed on unmount.
+2. Added AbortController for generate preview.
+
+**Why this approach?**
+
+Missing cleanup function in useEffect is a major issue, which every react dev should remember about.
+Fix for this is also very easy, just add removeEventListener in cleanup.
+I already implemented AbortController for pricing in CFG-142 so generate preview is consistent with rest of code.
 
 ---
 

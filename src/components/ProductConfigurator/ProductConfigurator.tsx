@@ -219,6 +219,10 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
 
     window.addEventListener('resize', handleResize);
     handleResize();
+
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
   }, []);
 
   useEffect(() => {
@@ -246,23 +250,25 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   }, [currentConfig, product]);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
 
     const updatePreview = async () => {
       try {
-        const preview = await generatePreview(currentConfig, product);
-        if (!cancelled) {
+        const preview = await generatePreview(currentConfig, product, controller.signal);
+        if (!controller.signal.aborted) {
           setPreviewUrl(preview.imageUrl);
         }
       } catch {
-        setPreviewUrl(product.imageUrl);
+        if (!controller.signal.aborted) {
+          setPreviewUrl(product.imageUrl);
+        }
       }
     };
 
     updatePreview();
 
     return () => {
-      cancelled = true;
+      controller.abort();
     };
   }, [currentConfig, product]);
 
