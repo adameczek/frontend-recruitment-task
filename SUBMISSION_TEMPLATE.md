@@ -12,6 +12,7 @@ List the ticket numbers you worked on, in the order you addressed them:
 
 1. CFG-148: Fixed crash when deselecting "Include Packaging" — filtered out undefined add-ons and cleaned up dependent add-ons on option change.
 2. CFG-142: Fixed price stuck at $0.00 — replaced the broken timestamp race-condition guard with an AbortController.
+3. CFG-152: Accessibility - Can’t navigate with keyboard only - added keyboard support as without it a contract could have been breached.
 
 ### Tickets I Deprioritized
 
@@ -34,9 +35,9 @@ List any tickets where you couldn't proceed due to ambiguity:
 
 Our board labels aren't always right. List tickets where you disagreed with the label (e.g. a Low that's actually High, a High that's actually Low, a Medium that's actually Unclear) and explain why. If you didn't disagree with any, say so.
 
-| Ticket  | Label on board | Your read    | Why                                         |
-| ------- | -------------- | ------------ | ------------------------------------------- |
-| CFG-XXX | e.g. ⚪ Low    | e.g. 🟠 High | [What in the description changed your read] |
+| Ticket  | Label on board | Your read    | Why                                                                |
+| ------- | -------------- | ------------ | ------------------------------------------------------------------ |
+| CFG-152 | Low            | e.g. 🟠 High | Possible breach of contract if we did not implement it before demo |
 
 ### Tickets Where You Stopped to Ask Instead of Implementing
 

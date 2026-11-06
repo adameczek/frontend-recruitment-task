@@ -22,6 +22,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import type {
   Product,
   ProductOption,
+  OptionChoice,
   AddOn,
   Configuration,
   PriceBreakdown,
@@ -111,6 +112,15 @@ const calculateColorColumns = (
   return Math.max(1, columns);
 };
 
+const getFocusableElements = (container: HTMLElement | null): HTMLElement[] => {
+  if (!container) return [];
+  return Array.from(
+    container.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    ),
+  ).filter((el) => !el.hasAttribute('disabled'));
+};
+
 // ============================================================================
 // Main Component
 // ============================================================================
@@ -163,6 +173,8 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   const containerRef = useRef<HTMLDivElement>(null);
   const colorPickerRef = useRef<HTMLDivElement>(null);
   const lastFocusedElement = useRef<HTMLElement | null>(null);
+  const draftModalRef = useRef<HTMLDivElement>(null);
+  const shareModalRef = useRef<HTMLDivElement>(null);
 
   // -------------------------------------------------------------------------
   // Derived State
@@ -265,6 +277,18 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
       getAllDrafts().then(setDrafts);
     }
   }, [showDraftModal]);
+
+  useEffect(() => {
+    if (showDraftModal) {
+      getFocusableElements(draftModalRef.current)[0]?.focus();
+    }
+  }, [showDraftModal]);
+
+  useEffect(() => {
+    if (showShareModal) {
+      getFocusableElements(shareModalRef.current)[0]?.focus();
+    }
+  }, [showShareModal]);
 
   // -------------------------------------------------------------------------
   // Event Handlers
@@ -415,12 +439,90 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   }, []);
 
   const handleModalKeyDown = useCallback(
-    (e: React.KeyboardEvent, modalType: 'draft' | 'share') => {
+    (e: React.KeyboardEvent, modalType: 'draft' | 'share', container: HTMLElement | null) => {
       if (e.key === 'Escape') {
+        e.preventDefault();
         handleModalClose(modalType);
+        return;
+      }
+
+      if (e.key !== 'Tab') return;
+
+      const focusables = getFocusableElements(container);
+      if (focusables.length === 0) return;
+
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      const active = document.activeElement;
+
+      if (!container?.contains(active)) {
+        e.preventDefault();
+        first.focus();
+        return;
+      }
+
+      if (e.shiftKey) {
+        if (active === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else if (active === last) {
+        e.preventDefault();
+        first.focus();
       }
     },
     [handleModalClose],
+  );
+
+  const handleColorKeyDown = useCallback(
+    (
+      e: React.KeyboardEvent<HTMLDivElement>,
+      option: ProductOption,
+      index: number,
+      choices: OptionChoice[],
+    ) => {
+      const handledKeys = ['ArrowRight', 'ArrowDown', 'ArrowLeft', 'ArrowUp', 'Home', 'End', ' '];
+      if (!handledKeys.includes(e.key)) return;
+
+      e.preventDefault();
+
+      if (e.key === ' ') {
+        if (!readOnly) handleOptionChange(option.id, choices[index].value);
+        return;
+      }
+
+      const radios = Array.from(
+        e.currentTarget.parentElement?.querySelectorAll<HTMLElement>('[role="radio"]') ?? [],
+      );
+      if (radios.length === 0) return;
+
+      const currentIndex = radios.indexOf(e.currentTarget);
+      let nextIndex: number;
+
+      switch (e.key) {
+        case 'ArrowRight':
+        case 'ArrowDown':
+          nextIndex = (currentIndex + 1) % radios.length;
+          break;
+        case 'ArrowLeft':
+        case 'ArrowUp':
+          nextIndex = (currentIndex - 1 + radios.length) % radios.length;
+          break;
+        case 'Home':
+          nextIndex = 0;
+          break;
+        default:
+          nextIndex = radios.length - 1;
+          break;
+      }
+
+      const targetChoice = choices[nextIndex];
+      if (targetChoice && !readOnly) {
+        handleOptionChange(option.id, targetChoice.value);
+      }
+      radios[nextIndex]?.focus();
+    },
+    [handleOptionChange, readOnly],
   );
 
   const handleDiscardChanges = useCallback(() => {
@@ -477,17 +579,24 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
           role="radiogroup"
           aria-label={option.name}
         >
-          {option.choices?.map((choice, index) => (
-            <div
-              key={index}
-              className={`color-swatch ${currentValue === choice.value ? 'selected' : ''}`}
-              style={{ backgroundColor: choice.colorHex }}
-              onClick={() => !readOnly && handleOptionChange(option.id, choice.value)}
-              title={choice.label}
-              role="radio"
-              aria-checked={currentValue === choice.value}
-            />
-          ))}
+          {option.choices?.map((choice, index) => {
+            const isSelected = currentValue === choice.value;
+            const isTabStop = isSelected || (!currentValue && index === 0);
+            return (
+              <div
+                key={index}
+                className={`color-swatch ${isSelected ? 'selected' : ''}`}
+                style={{ backgroundColor: choice.colorHex }}
+                onClick={() => !readOnly && handleOptionChange(option.id, choice.value)}
+                title={choice.label}
+                role="radio"
+                aria-checked={isSelected}
+                aria-label={choice.label}
+                tabIndex={isTabStop ? 0 : -1}
+                onKeyDown={(e) => handleColorKeyDown(e, option, index, option.choices ?? [])}
+              />
+            );
+          })}
         </div>
       </div>
     );
@@ -675,12 +784,16 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
     if (!showDraftModal) return null;
 
     return (
-      <div
-        className="modal-overlay"
-        onClick={() => handleModalClose('draft')}
-        onKeyDown={(e) => handleModalKeyDown(e, 'draft')}
-      >
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-overlay" onClick={() => handleModalClose('draft')}>
+        <div
+          className="modal"
+          ref={draftModalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Saved Drafts"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => handleModalKeyDown(e, 'draft', draftModalRef.current)}
+        >
           <div className="modal-header">
             <h3 className="modal-title">Saved Drafts</h3>
             <button
@@ -757,12 +870,16 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
     if (!showShareModal) return null;
 
     return (
-      <div
-        className="modal-overlay"
-        onClick={() => handleModalClose('share')}
-        onKeyDown={(e) => handleModalKeyDown(e, 'share')}
-      >
-        <div className="modal" onClick={(e) => e.stopPropagation()}>
+      <div className="modal-overlay" onClick={() => handleModalClose('share')}>
+        <div
+          className="modal"
+          ref={shareModalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Share Configuration"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => handleModalKeyDown(e, 'share', shareModalRef.current)}
+        >
           <div className="modal-header">
             <h3 className="modal-title">Share Configuration</h3>
             <button
