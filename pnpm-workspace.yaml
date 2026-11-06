@@ -1,0 +1,8 @@
+allowBuilds:
+  esbuild: true
+  lefthook: true
+
+# Fallback for older pnpm 10 releases that do not support allowBuilds
+onlyBuiltDependencies:
+  - esbuild
+  - lefthook
