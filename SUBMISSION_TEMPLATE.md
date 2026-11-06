@@ -10,10 +10,11 @@ Total time: **\_\_** (approximate)
 
 List the ticket numbers you worked on, in the order you addressed them:
 
-1. CFG-148: Fixed crash when deselecting "Include Packaging" — filtered out undefined add-ons and cleaned up dependent add-ons on option change.
+1. CFG-148: Fixed crash when deselecting "Include Packaging" - filtered out undefined add-ons and cleaned up dependent add-ons on option change.
 2. CFG-142: Fixed price stuck at $0.00 — replaced the broken timestamp race-condition guard with an AbortController.
 3. CFG-152: Accessibility - Can’t navigate with keyboard only - added keyboard support as without it a contract could have been breached.
-4. CFG-143: App becomes sluggish after extended use — fixed the resize handler memory leak and made preview generation cancellable.
+4. CFG-143: App becomes sluggish after extended use - fixed the resize handler memory leak and made preview generation cancellable.
+5. CFG-151: Error messages are too technical - mapped internal error codes to user-friendly, actionable messages and cleared stale error state.
 
 ### Tickets I Deprioritized
 
@@ -147,6 +148,10 @@ Brief description of any other modifications:
   1. I avoided cascading renders by removing setState inside useEffect. Price and error are now set in then and catch
   2. Removed unused `useDebouncedPriceCalculation`
   3. isLoading is no longer stored, it is now based on comparision of settled key to configKey
+- in CFG-151
+  1. Added `getUserFriendlyErrorMessage()` in `src/utils/errorMessages.ts` mapping internal codes (e.g. `ERR_PRICE_CALC_FAILED`, `VALIDATION_CONFLICT_47`) to friendly, actionable copy with a generic fallback.
+  2. Replaced the raw `Error: {error || priceError}` render with the friendly message and removed the `.error-code` style.
+  3. Cleared the `error` state at the start of each handler that can set it, so stale errors don't linger after a retry or selection change.
 
 ---
 

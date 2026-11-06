@@ -46,6 +46,7 @@ import {
   getAppliedDiscountPercentage,
   getNextDiscountTier,
 } from '../../utils/pricing';
+import { getUserFriendlyErrorMessage } from '../../utils/errorMessages';
 import './styles.css';
 
 interface ProductConfiguratorProps {
@@ -302,6 +303,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
 
   const handleOptionChange = useCallback(
     (optionId: string, value: string | number | boolean) => {
+      setError(null);
       setSelections((prev) => ({
         ...prev,
         [optionId]: value,
@@ -335,6 +337,8 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
         return;
       }
 
+      setError(null);
+
       setSelectedAddOns((prev) => {
         if (prev.includes(addOnId)) {
           return prev.filter((id) => id !== addOnId);
@@ -350,6 +354,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
 
   const handleQuantityChange = useCallback(
     (newQuantity: number) => {
+      setError(null);
       const quantityOption = product.options.find((o) => o.type === 'quantity');
       const min = quantityOption?.min ?? 1;
       const max = quantityOption?.max ?? 999;
@@ -362,6 +367,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   );
 
   const handleSaveDraft = useCallback(async () => {
+    setError(null);
     try {
       await saveDraft(currentConfig, draftName || 'Untitled Draft');
       setLastSaved(new Date());
@@ -375,6 +381,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   }, [currentConfig, draftName]);
 
   const handleLoadDraft = useCallback(async (draftId: string) => {
+    setError(null);
     try {
       const draft = await loadDraft(draftId);
       if (draft) {
@@ -390,6 +397,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   }, []);
 
   const handleDeleteDraft = useCallback(async (draftId: string) => {
+    setError(null);
     try {
       await deleteDraft(draftId);
       setDrafts((prev) => prev.filter((d) => d.id !== draftId));
@@ -404,6 +412,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
       return;
     }
 
+    setError(null);
     if (price && onAddToCart) {
       onAddToCart(currentConfig, price);
     }
@@ -416,6 +425,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   }, [price, currentConfig, onAddToCart]);
 
   const handleCopyShareUrl = useCallback(() => {
+    setError(null);
     navigator.clipboard
       .writeText(shareUrl)
       .then(() => {})
@@ -952,10 +962,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
       </div>
 
       {(error || priceError) && (
-        <div className="error-message">
-          <div>Something went wrong. Please try again.</div>
-          <div className="error-code">Error: {error || priceError}</div>
-        </div>
+        <div className="error-message">{getUserFriendlyErrorMessage(error || priceError)}</div>
       )}
 
       {validation?.warnings.map((warning, i) => (
