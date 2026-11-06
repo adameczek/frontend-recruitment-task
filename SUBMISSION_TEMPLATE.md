@@ -17,6 +17,7 @@ List the ticket numbers you worked on, in the order you addressed them:
 5. CFG-151: Error messages are too technical - mapped internal error codes to user-friendly, actionable messages and cleared stale error state.
 6. CFG-149: Added loading indicator during price calculation.
 7. CFG-156: Cleaned up list keys - replaced index/non-unique `name` keys with stable IDs.
+8. CFG-157: Discard unsaved changes confirmation - added a `beforeunload` guard when dirty and a confirmation modal.
 
 ### Tickets I Deprioritized
 
