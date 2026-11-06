@@ -25,137 +25,86 @@ export function usePriceCalculation(
   config: Configuration | null,
   product: Product,
 ): UsePriceCalculationResult {
-  const [price, setPrice] = useState<PriceBreakdown | null>(null);
-  const [formattedTotal, setFormattedTotal] = useState<string>('$0.00');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<{
+    price: PriceBreakdown | null;
+    formattedTotal: string;
+    error: string | null;
+  }>({
+    price: null,
+    formattedTotal: '$0.00',
+    error: null,
+  });
 
-  // Track latest request timestamp to prevent stale responses from overwriting newer ones.
-  // Guards against race conditions when the user changes options in rapid succession.
-  const latestRequestRef = useRef<number>(0);
+  // Fingerprint of the configuration we most recently finished fetching for.
+  // Used to derive `isLoading` during render instead of setting it imperatively.
+  const [settledKey, setSettledKey] = useState<string | null>(null);
 
-  const fetchPrice = useCallback(async () => {
+  // Hold the in-flight request so we can cancel it when a newer one starts
+  // or the component unmounts. Prevents stale responses from overwriting newer ones.
+  const abortControllerRef = useRef<AbortController | null>(null);
+
+  const configKey = config
+    ? JSON.stringify([config.selections, config.addOns, config.quantity])
+    : null;
+
+  const fetchPrice = useCallback(() => {
+    // Cancel any in-flight request before starting a new one.
+    abortControllerRef.current?.abort();
+
     if (!config) {
-      setPrice(null);
-      setFormattedTotal('$0.00');
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
 
-    const requestTime = Date.now();
-    latestRequestRef.current = requestTime;
-
-    try {
-      const response: PriceResponse = await calculatePrice(config, product);
-
-      if (response.timestamp >= latestRequestRef.current) {
-        setPrice(response.breakdown);
-        setFormattedTotal(response.formattedTotal);
-      }
-    } catch {
-      // Only set error if this is still the latest request
-      if (requestTime === latestRequestRef.current) {
-        setError('ERR_PRICE_CALC_FAILED');
-        setPrice(null);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, [config, product]);
+    calculatePrice(config, product, controller.signal)
+      .then((response: PriceResponse) => {
+        if (!controller.signal.aborted) {
+          setResult({
+            price: response.breakdown,
+            formattedTotal: response.formattedTotal,
+            error: null,
+          });
+          setSettledKey(configKey);
+        }
+      })
+      .catch(() => {
+        // Ignore aborted requests; only surface real failures.
+        if (!controller.signal.aborted) {
+          setResult({
+            price: null,
+            formattedTotal: '$0.00',
+            error: 'ERR_PRICE_CALC_FAILED',
+          });
+          setSettledKey(configKey);
+        }
+      });
+  }, [config, product, configKey]);
 
   // Fetch price when config changes
   useEffect(() => {
     fetchPrice();
-  }, [config?.selections, config?.addOns, config?.quantity]);
-
-  return {
-    price,
-    formattedTotal,
-    isLoading,
-    error,
-    refetch: fetchPrice,
-  };
-}
-
-/**
- * Debounced version of price calculation
- */
-export function useDebouncedPriceCalculation(
-  config: Configuration | null,
-  product: Product,
-  delay: number = 300,
-): UsePriceCalculationResult {
-  const [price, setPrice] = useState<PriceBreakdown | null>(null);
-  const [formattedTotal, setFormattedTotal] = useState<string>('$0.00');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const configRef = useRef(config);
-
-  useEffect(() => {
-    // Clear any pending timeout
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
-    }
-
-    if (!config) {
-      setPrice(null);
-      setFormattedTotal('$0.00');
-      setIsLoading(false);
-      return;
-    }
-
-    setIsLoading(true);
-
-    timeoutRef.current = setTimeout(async () => {
-      try {
-        const response = await calculatePrice(configRef.current!, product);
-        setPrice(response.breakdown);
-        setFormattedTotal(response.formattedTotal);
-        setError(null);
-      } catch {
-        setError('ERR_PRICE_CALC_FAILED');
-      } finally {
-        setIsLoading(false);
-      }
-    }, delay);
-
-    configRef.current = config;
-
     return () => {
-      if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
-      }
+      abortControllerRef.current?.abort();
     };
-  }, [config, product, delay]);
+  }, [fetchPrice]);
 
-  const refetch = useCallback(() => {
-    if (config) {
-      setIsLoading(true);
-      calculatePrice(config, product)
-        .then((response) => {
-          setPrice(response.breakdown);
-          setFormattedTotal(response.formattedTotal);
-          setError(null);
-        })
-        .catch(() => {
-          setError('ERR_PRICE_CALC_FAILED');
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    }
-  }, [config, product]);
+  if (!config) {
+    return {
+      price: null,
+      formattedTotal: '$0.00',
+      isLoading: false,
+      error: null,
+      refetch: fetchPrice,
+    };
+  }
 
   return {
-    price,
-    formattedTotal,
-    isLoading,
-    error,
-    refetch,
+    price: result.price,
+    formattedTotal: result.formattedTotal,
+    isLoading: settledKey !== configKey,
+    error: settledKey === configKey ? result.error : null,
+    refetch: fetchPrice,
   };
 }

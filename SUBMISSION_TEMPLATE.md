@@ -55,7 +55,7 @@ If a ticket was ambiguous enough that the right move was to escalate / ask PM / 
 
 Describe the most important bugs you identified:
 
-#### Issue 1: [Title]
+#### Issue 1: Crash when deselecting "Include Packaging"
 
 **Ticket(s):** CFG-148
 
@@ -69,7 +69,7 @@ Summary tries to get price of addon but fails because it's undefined and that's 
 First i replicated the bug, and then went to the dev console to check for errors.
 I found uncaught TypeError in console so i went to ProductConfigurator.tsx where it was caused.
 To get it quicker (As this component is pretty large) i used ai with brainstorming skill, where i also provided ticket description and error message. It helped me with finding the root cause.
-
+"Include Packaging"
 **How did you fix it?**
 
 I filtered out undefined values in an Add-ons section in configuration.
@@ -84,9 +84,22 @@ Fix in handleOptionChange was made so the code would comply with comment that wa
 
 ---
 
-#### Issue 2: [Title]
+#### Issue 2: CFG-142: Price never updates — stuck at $0.00
 
-[Same structure as above]
+**Ticket(s):** CFG-142
+
+**What was the bug?**
+Price never updated because hook race condition guard compard two incompatible values. Date.now() was compared to mock api timestamp which returns incrementing requestId, since counter was always smaller the condition was always false.
+
+**How did you find it?**
+I reproduced the scenario, searched for code responsible for setting price as there was hint in description of issue "(Looks like a problem in how the hook decides when to apply a response.)".
+**How did you fix it?**
+I replaced the timestamp checking with AbortController. So each new fetchPrice call aborts the previous one.
+
+**Why this approach?**
+
+Race conditions should be fixed by cancelling the previous request instead of ignoring it. This also lowers the load on backend as there will be less requests to process.
+I did not use useDebouncedPriceCalculation to still have cost quickly load without a delay from debounce, and abort controller guarantees latest response to be loaded.
 
 ---
 
@@ -99,7 +112,10 @@ Brief description of any other modifications:
   2. To avoid cascading renders i had to move out setIsDirty from line 258 to three mutation handlers (handleOptionChange, handleAddOnToggle, handleQuantityChange)
   3. To avoid cascading renders I moved share url generation out of effect to new handleOpenShareModal callback that the share button uses.
   4. To avoid cascading renders i deleted the mount only effect and moved the code to useState initializers.
-- [Change 2]
+- in second Ticket CFG-142
+  1. I avoided cascading renders by removing setState inside useEffect. Price and error are now set in then and catch
+  2. Removed unused `useDebouncedPriceCalculation`
+  3. isLoading is no longer stored, it is now based on comparision of settled key to configKey
 
 ---
 
@@ -126,7 +142,7 @@ If you had more time, what would you improve?
 
 Questions you would ask in a real scenario:
 
-1. [Question 1]
+1. why is there useDebouncedPriceCalculation that's not used anywhere?
 2. [Question 2]
 
 ---
@@ -168,6 +184,8 @@ Useful things to share:
 - Anything you verified manually that the AI got wrong
 
 - I have used brainstorming skill with text from the tickets to help me quickly get into the issues. The codebase was quite large which would take me longer time to understand.
+
+- For ticket CFG-142 ai suggested just fixing the system for checking for stale responses. I decided that way better option would be to implement AbortController as it's modern and standard React practice.
 
 ---
 

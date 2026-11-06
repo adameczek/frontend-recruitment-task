@@ -13,12 +13,30 @@ import type {
 import { calculatePriceBreakdown } from '../utils/pricing';
 
 // Simulate network latency - varies to mimic real conditions
-const randomDelay = (min: number, max: number): Promise<void> => {
+const randomDelay = (min: number, max: number, signal?: AbortSignal): Promise<void> => {
   const delay = Math.floor(Math.random() * (max - min + 1)) + min;
-  return new Promise((resolve) => setTimeout(resolve, delay));
+
+  return new Promise((resolve, reject) => {
+    if (signal?.aborted) {
+      reject(new DOMException('Aborted', 'AbortError'));
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      signal?.removeEventListener('abort', onAbort);
+      resolve();
+    }, delay);
+
+    function onAbort() {
+      clearTimeout(timer);
+      reject(new DOMException('Aborted', 'AbortError'));
+    }
+
+    signal?.addEventListener('abort', onAbort, { once: true });
+  });
 };
 
-// Track request IDs for debugging (and to create the race condition bug)
+// Track request IDs for debugging
 let requestCounter = 0;
 
 /**
@@ -28,12 +46,12 @@ let requestCounter = 0;
 export async function calculatePrice(
   config: Configuration,
   product: Product,
+  signal?: AbortSignal,
 ): Promise<PriceResponse> {
   const requestId = ++requestCounter;
 
-  // Simulate variable network latency (this is intentional for the race condition bug)
-  // Sometimes fast, sometimes slow - creates out-of-order responses
-  await randomDelay(150, 800);
+  // Simulate variable network latency (sometimes fast, sometimes slow)
+  await randomDelay(150, 800, signal);
 
   const breakdown = calculatePriceBreakdown(config, product);
 
