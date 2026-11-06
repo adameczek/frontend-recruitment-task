@@ -160,6 +160,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
 
   const [showDraftModal, setShowDraftModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showUnsavedChangesModal, setShowUnsavedChangesModal] = useState(false);
   const [drafts, setDrafts] = useState<Draft[]>([]);
 
   const [validation, setValidation] = useState<ValidationResult | null>(null);
@@ -176,6 +177,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   const lastFocusedElement = useRef<HTMLElement | null>(null);
   const draftModalRef = useRef<HTMLDivElement>(null);
   const shareModalRef = useRef<HTMLDivElement>(null);
+  const unsavedChangesModalRef = useRef<HTMLDivElement>(null);
 
   // -------------------------------------------------------------------------
   // Derived State
@@ -296,6 +298,24 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
       getFocusableElements(shareModalRef.current)[0]?.focus();
     }
   }, [showShareModal]);
+
+  useEffect(() => {
+    if (showUnsavedChangesModal) {
+      getFocusableElements(unsavedChangesModalRef.current)[0]?.focus();
+    }
+  }, [showUnsavedChangesModal]);
+
+  useEffect(() => {
+    if (!isDirty) return;
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = '';
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [isDirty]);
 
   // -------------------------------------------------------------------------
   // Event Handlers
@@ -442,11 +462,13 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
     setShowShareModal(true);
   }, [currentConfig]);
 
-  const handleModalClose = useCallback((modalType: 'draft' | 'share') => {
+  const handleModalClose = useCallback((modalType: 'draft' | 'share' | 'unsaved') => {
     if (modalType === 'draft') {
       setShowDraftModal(false);
-    } else {
+    } else if (modalType === 'share') {
       setShowShareModal(false);
+    } else {
+      setShowUnsavedChangesModal(false);
     }
 
     if (lastFocusedElement.current) {
@@ -455,7 +477,11 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
   }, []);
 
   const handleModalKeyDown = useCallback(
-    (e: React.KeyboardEvent, modalType: 'draft' | 'share', container: HTMLElement | null) => {
+    (
+      e: React.KeyboardEvent,
+      modalType: 'draft' | 'share' | 'unsaved',
+      container: HTMLElement | null,
+    ) => {
       if (e.key === 'Escape') {
         e.preventDefault();
         handleModalClose(modalType);
@@ -546,7 +572,24 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
     setSelectedAddOns([]);
     setQuantity(1);
     setIsDirty(false);
+    setShowUnsavedChangesModal(false);
   }, [product]);
+
+  const handleSaveAndClose = useCallback(async () => {
+    setError(null);
+    try {
+      await saveDraft(currentConfig, draftName || 'Untitled Draft');
+      setLastSaved(new Date());
+      setDraftName('');
+      setSelections(getDefaultSelections(product));
+      setSelectedAddOns([]);
+      setQuantity(1);
+      setIsDirty(false);
+      setShowUnsavedChangesModal(false);
+    } catch {
+      setError(ERROR_CODES.UNKNOWN);
+    }
+  }, [currentConfig, draftName, product]);
 
   // -------------------------------------------------------------------------
   // Render Helpers
@@ -929,6 +972,49 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
     );
   };
 
+  const renderUnsavedChangesModal = () => {
+    if (!showUnsavedChangesModal) return null;
+
+    return (
+      <div className="modal-overlay" onClick={() => handleModalClose('unsaved')}>
+        <div
+          className="modal"
+          ref={unsavedChangesModalRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Unsaved changes"
+          onClick={(e) => e.stopPropagation()}
+          onKeyDown={(e) => handleModalKeyDown(e, 'unsaved', unsavedChangesModalRef.current)}
+        >
+          <div className="modal-header">
+            <h3 className="modal-title">Unsaved Changes</h3>
+            <button
+              className="modal-close"
+              onClick={() => handleModalClose('unsaved')}
+              aria-label="Close modal"
+            >
+              x
+            </button>
+          </div>
+          <div className="modal-body">
+            <p>You have unsaved changes. What would you like to do?</p>
+          </div>
+          <div className="modal-footer">
+            <button className="btn btn-secondary" onClick={() => handleModalClose('unsaved')}>
+              Cancel
+            </button>
+            <button className="btn btn-danger" onClick={handleDiscardChanges}>
+              Discard
+            </button>
+            <button className="btn btn-primary" onClick={handleSaveAndClose}>
+              Save & Close
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // -------------------------------------------------------------------------
   // Main Render
   // -------------------------------------------------------------------------
@@ -954,7 +1040,13 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
             Share
           </button>
           {isDirty && (
-            <button className="btn btn-danger" onClick={handleDiscardChanges}>
+            <button
+              className="btn btn-danger"
+              onClick={() => {
+                lastFocusedElement.current = document.activeElement as HTMLElement;
+                setShowUnsavedChangesModal(true);
+              }}
+            >
               Discard
             </button>
           )}
@@ -1070,6 +1162,7 @@ export const ProductConfigurator: React.FC<ProductConfiguratorProps> = ({
 
       {renderDraftModal()}
       {renderShareModal()}
+      {renderUnsavedChangesModal()}
     </div>
   );
 };
