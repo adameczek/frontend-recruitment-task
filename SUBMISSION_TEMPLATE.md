@@ -1,8 +1,8 @@
-# Submission: [Your Name]
+# Submission: Adam Sawicki-Stanul
 
 ## Time Spent
 
-Total time: **\_\_** (approximate)
+Total time: **About 4 hours** (approximate)
 
 ## Ticket Triage
 
@@ -167,16 +167,16 @@ Brief description of any other modifications:
 
 List any issues you noticed but intentionally left:
 
-| Issue | Why I Left It |
-| ----- | ------------- |
-|       |               |
+| Issue   | Why I Left It                                                                                        |
+| ------- | ---------------------------------------------------------------------------------------------------- |
+| CFG-154 | This should be consulted with finances and PM first before implementing it as it touches the pricing |
 
 ### Potential Improvements for the Future
 
 If you had more time, what would you improve?
 
-1. [Improvement 1]
-2. [Improvement 2]
+1. I would break down ProductConfigurator into more smaller components that would help with less re rendering and more code readability.
+2. I would implement tests to all components as this repo currently does not have any tests.
 
 ---
 
@@ -185,7 +185,7 @@ If you had more time, what would you improve?
 Questions you would ask in a real scenario:
 
 1. why is there useDebouncedPriceCalculation that's not used anywhere?
-2. [Question 2]
+2. why there are no tests?
 
 ---
 
@@ -193,8 +193,7 @@ Questions you would ask in a real scenario:
 
 List any assumptions you made to proceed:
 
-1. [Assumption 1]
-2. [Assumption 2]
+1. Code review was magically done by somebody the moment i created pull request and it was approved so i could have merged to main without any issues.
 
 ---
 
@@ -202,15 +201,15 @@ List any assumptions you made to proceed:
 
 ### What went well?
 
-[Your reflection]
+I fixed all critical issues, most of the tasks were well writtend and helpful. Code comments were also good addition.
 
 ### What was challenging?
 
-[Your reflection]
+Getting into this codebase and trying to do all the tasks in under 4 hours. There was additional stress element that would not exist in regular work.
 
 ### What would you do differently with more time?
 
-[Your reflection]
+I would have taken more time to carefully write in this file about what i have done and with more details.
 
 ---
 
@@ -235,4 +234,4 @@ Useful things to share:
 
 Anything else you want us to know:
 
-[Your notes]
+None
