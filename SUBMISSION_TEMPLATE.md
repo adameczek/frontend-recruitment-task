@@ -10,7 +10,7 @@ Total time: **\_\_** (approximate)
 
 List the ticket numbers you worked on, in the order you addressed them:
 
-1. **CFG-XXX**: [Brief description of what you did]
+1. CFG-148: [Brief description of what you did]
 2. **CFG-XXX**: [Brief description of what you did]
 3. ...
 
@@ -57,23 +57,30 @@ Describe the most important bugs you identified:
 
 #### Issue 1: [Title]
 
-**Ticket(s):** CFG-XXX
+**Ticket(s):** CFG-148
 
 **What was the bug?**
 
-[Describe the root cause]
+Gift Wrap depends on include packaging, handleOptionChange cleans up addons only for type select, and include packaging is a toggle so gift wrap is left out.
+Summary tries to get price of addon but fails because it's undefined and that's where error is thrown.
 
 **How did you find it?**
 
-[Your debugging process]
+First i replicated the bug, and then went to the dev console to check for errors.
+I found uncaught TypeError in console so i went to ProductConfigurator.tsx where it was caused.
+To get it quicker (As this component is pretty large) i used ai with brainstorming skill, where i also provided ticket description and error message. It helped me with finding the root cause.
 
 **How did you fix it?**
 
-[Explain your solution]
+I filtered out undefined values in an Add-ons section in configuration.
+I also made handleOptionChange remove addons whose requirements is no longer met for any option type (so like the comment in this event handler was described)
 
 **Why this approach?**
 
-[Any alternatives you considered]
+I started with this bug as it was noted that it's a blocker, which is correct as this crashes whole application.
+
+Filtering out undefined values in add ons selection is extra safety fix, just to be sure it wouldn't happen (better safe than sorry).
+Fix in handleOptionChange was made so the code would comply with comment that was made here earlier.
 
 ---
 
@@ -87,7 +94,11 @@ Describe the most important bugs you identified:
 
 Brief description of any other modifications:
 
-- [Change 1]
+- In first ticket that i have done CFG-148 i had to make other fixes as eslint showed some errors.
+  1. i had to fix empty catch statement in ProductConfigurator.tsx in line 210, where i set isValid to false in case of error.
+  2. To avoid cascading renders i had to move out setIsDirty from line 258 to three mutation handlers (handleOptionChange, handleAddOnToggle, handleQuantityChange)
+  3. To avoid cascading renders I moved share url generation out of effect to new handleOpenShareModal callback that the share button uses.
+  4. To avoid cascading renders i deleted the mount only effect and moved the code to useState initializers.
 - [Change 2]
 
 ---
@@ -155,6 +166,8 @@ Useful things to share:
 - Where the AI helped and where you overrode it
 - Anything the AI suggested that you rejected — and why
 - Anything you verified manually that the AI got wrong
+
+- I have used brainstorming skill with text from the tickets to help me quickly get into the issues. The codebase was quite large which would take me longer time to understand.
 
 ---
 
