@@ -10,9 +10,8 @@ Total time: **\_\_** (approximate)
 
 List the ticket numbers you worked on, in the order you addressed them:
 
-1. CFG-148: [Brief description of what you did]
-2. **CFG-XXX**: [Brief description of what you did]
-3. ...
+1. CFG-148: Fixed crash when deselecting "Include Packaging" — filtered out undefined add-ons and cleaned up dependent add-ons on option change.
+2. CFG-142: Fixed price stuck at $0.00 — replaced the broken timestamp race-condition guard with an AbortController.
 
 ### Tickets I Deprioritized
 
@@ -27,9 +26,9 @@ List tickets you intentionally skipped and why:
 
 List any tickets where you couldn't proceed due to ambiguity:
 
-| Ticket  | Question                  |
-| ------- | ------------------------- |
-| CFG-XXX | [What you needed to know] |
+| Ticket  | Question                                                                                                                                                                   |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CFG-145 | Conflicts with CFG-144 which says remove the Quick Add feature, while CFG-145 says improve it. Need a PM/product decision on which ticket wins before implementing either. |
 
 ### Tickets With a Misleading Priority Label
 
@@ -43,9 +42,9 @@ Our board labels aren't always right. List tickets where you disagreed with the 
 
 If a ticket was ambiguous enough that the right move was to escalate / ask PM / gather more context rather than ship a fix, list it here. We value this signal — picking one interpretation blindly and shipping it can cost more than stopping to ask.
 
-| Ticket  | Who would you ask | What you'd ask                                    |
-| ------- | ----------------- | ------------------------------------------------- |
-| CFG-XXX | e.g. PM / Finance | [The specific question + why you can't answer it] |
+| Ticket  | Who would you ask            | What you'd ask                                                                                                       |
+| ------- | ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| CFG-147 | Customer support / TechStyle | What browser and setup they use, plus a share URL from prod so I can reproduce it — I couldn't reproduce it locally. |
 
 ---
 
@@ -70,6 +69,7 @@ First i replicated the bug, and then went to the dev console to check for errors
 I found uncaught TypeError in console so i went to ProductConfigurator.tsx where it was caused.
 To get it quicker (As this component is pretty large) i used ai with brainstorming skill, where i also provided ticket description and error message. It helped me with finding the root cause.
 "Include Packaging"
+
 **How did you fix it?**
 
 I filtered out undefined values in an Add-ons section in configuration.
@@ -93,6 +93,7 @@ Price never updated because hook race condition guard compard two incompatible v
 
 **How did you find it?**
 I reproduced the scenario, searched for code responsible for setting price as there was hint in description of issue "(Looks like a problem in how the hook decides when to apply a response.)".
+
 **How did you fix it?**
 I replaced the timestamp checking with AbortController. So each new fetchPrice call aborts the previous one.
 
@@ -125,9 +126,9 @@ Brief description of any other modifications:
 
 List any issues you noticed but intentionally left:
 
-| Issue   | Why I Left It                                                                                                                                       |
-| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| CFG-147 | I could not reproduce it. I would need more info about customer setup, what browser does they use. I would also want to try to reproduce it on prod |
+| Issue | Why I Left It |
+| ----- | ------------- |
+|       |               |
 
 ### Potential Improvements for the Future
 
