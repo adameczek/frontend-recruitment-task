@@ -15,6 +15,8 @@ List the ticket numbers you worked on, in the order you addressed them:
 3. CFG-152: Accessibility - Can’t navigate with keyboard only - added keyboard support as without it a contract could have been breached.
 4. CFG-143: App becomes sluggish after extended use - fixed the resize handler memory leak and made preview generation cancellable.
 5. CFG-151: Error messages are too technical - mapped internal error codes to user-friendly, actionable messages and cleared stale error state.
+6. CFG-149: Added loading indicator during price calculation.
+7. CFG-156: Cleaned up list keys - replaced index/non-unique `name` keys with stable IDs.
 
 ### Tickets I Deprioritized
 
@@ -152,6 +154,9 @@ Brief description of any other modifications:
   1. Added `getUserFriendlyErrorMessage()` in `src/utils/errorMessages.ts` mapping internal codes (e.g. `ERR_PRICE_CALC_FAILED`, `VALIDATION_CONFLICT_47`) to friendly, actionable copy with a generic fallback.
   2. Replaced the raw `Error: {error || priceError}` render with the friendly message and removed the `.error-code` style.
   3. Cleared the `error` state at the start of each handler that can set it, so stale errors don't linger after a retry or selection change.
+- in CFG-149 + CFG-156 (i made them together as both were small fixes)
+  1. CFG-149: Applied Marcus's suggested fix
+  2. CFG-156: Replaced unstable list keys with stable ids.
 
 ---
 
