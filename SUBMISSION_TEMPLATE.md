@@ -125,9 +125,9 @@ Brief description of any other modifications:
 
 List any issues you noticed but intentionally left:
 
-| Issue   | Why I Left It                                         |
-| ------- | ----------------------------------------------------- |
-| [Issue] | [Reason - out of scope, time, needs discussion, etc.] |
+| Issue   | Why I Left It                                                                                                                                       |
+| ------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CFG-147 | I could not reproduce it. I would need more info about customer setup, what browser does they use. I would also want to try to reproduce it on prod |
 
 ### Potential Improvements for the Future
 
