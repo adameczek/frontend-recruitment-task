@@ -614,13 +614,13 @@
 .btn:focus,
 .option-select:focus,
 .quantity-input:focus,
-.toggle-switch:focus {
+.toggle-switch:focus,
+.quantity-btn:focus,
+.modal-close:focus,
+.color-swatch:focus {
   outline: 2px solid #3498db;
   outline-offset: 2px;
 }
-
-/* Missing focus style for color swatches - accessibility issue */
-/* .color-swatch:focus { } */
 
 /* Draft List in Modal */
 .draft-list {
