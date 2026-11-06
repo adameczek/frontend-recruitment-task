@@ -19,10 +19,10 @@ List the ticket numbers you worked on, in the order you addressed them:
 
 List tickets you intentionally skipped and why:
 
-| Ticket  | Reason                 |
-| ------- | ---------------------- |
-| CFG-XXX | [Why you skipped this] |
-| CFG-XXX | [Why you skipped this] |
+| Ticket  | Reason                                                                                  |
+| ------- | --------------------------------------------------------------------------------------- |
+| CFG-158 | Already satisfied — `currentConfig` is already memoized and `product` is a stable prop. |
+| CFG-XXX | [Why you skipped this]                                                                  |
 
 ### Tickets That Need Clarification
 
@@ -36,9 +36,10 @@ List any tickets where you couldn't proceed due to ambiguity:
 
 Our board labels aren't always right. List tickets where you disagreed with the label (e.g. a Low that's actually High, a High that's actually Low, a Medium that's actually Unclear) and explain why. If you didn't disagree with any, say so.
 
-| Ticket  | Label on board | Your read    | Why                                                                |
-| ------- | -------------- | ------------ | ------------------------------------------------------------------ |
-| CFG-152 | Low            | e.g. 🟠 High | Possible breach of contract if we did not implement it before demo |
+| Ticket  | Label on board | Your read             | Why                                                                |
+| ------- | -------------- | --------------------- | ------------------------------------------------------------------ |
+| CFG-152 | Low            | e.g. 🟠 High          | Possible breach of contract if we did not implement it before demo |
+| CFG-158 | High           | ⚪ Low (already done) | Suggested fix is already in the code;                              |
 
 ### Tickets Where You Stopped to Ask Instead of Implementing
 
